@@ -18,12 +18,29 @@ A comprehensive Python tool for extracting credentials and sensitive data from c
 
 1. Install required dependencies:
 ```bash
-pip install -r requirements.txt
+pip install -r requirements_excel_forensics.txt
 ```
 
 2. Make the script executable:
 ```bash
 chmod +x excel_forensics.py hex_analyzer.py
+```
+
+### Optional Enhanced Dependencies
+
+For advanced forensics capabilities, you can install additional tools:
+```bash
+# Enhanced file type detection
+pip install python-magic
+
+# Advanced OLE file analysis
+pip install olefile oletools
+
+# Binary analysis and extraction
+pip install binwalk
+
+# Pattern matching engine
+pip install yara-python
 ```
 
 ## Usage
