@@ -12,6 +12,7 @@ A comprehensive Python tool for extracting credentials and sensitive data from c
 - **File Repair**: Attempts to repair corrupted file structures
 - **VBA Macro Detection**: Searches for embedded VBA code that might contain credentials
 - **Hex Dump Analysis**: Analyzes raw hex data for hidden information
+- **Advanced Hex Forensics**: Deep binary analysis with entropy detection and embedded file extraction
 
 ## Installation
 
@@ -22,7 +23,7 @@ pip install -r requirements.txt
 
 2. Make the script executable:
 ```bash
-chmod +x excel_forensics.py
+chmod +x excel_forensics.py hex_analyzer.py
 ```
 
 ## Usage
@@ -40,6 +41,16 @@ python excel_forensics.py corrupted_file.xlsx -o extracted_credentials.txt
 ### Verbose Mode
 ```bash
 python excel_forensics.py corrupted_file.xlsx -v
+```
+
+### Advanced Hex Analysis
+```bash
+# Run all advanced analysis methods
+python hex_analyzer.py corrupted_file.xlsx --all
+
+# Specific analysis types
+python hex_analyzer.py file.xlsx --signatures --extract --entropy
+python hex_analyzer.py file.xlsx --hex-dump --base64 --unicode
 ```
 
 ## Analysis Methods
@@ -85,6 +96,91 @@ Searches for VBA project signatures and extracts:
 - Macro code that might contain hardcoded credentials
 - VBA project metadata
 - Embedded script content
+
+## Advanced Hex Analysis
+
+The `hex_analyzer.py` tool provides sophisticated byte-level forensics capabilities:
+
+### File Signature Detection
+```bash
+python hex_analyzer.py file.xlsx --signatures
+```
+- Detects embedded file signatures (ZIP, PDF, JPEG, PNG, etc.)
+- Identifies multiple file formats within a single document
+- Maps file structure and embedded content locations
+
+### Embedded File Extraction
+```bash
+python hex_analyzer.py file.xlsx --extract
+```
+- Automatically extracts embedded files based on signatures
+- Supports ZIP/Office, OLE, PDF, and other formats
+- Creates separate files for each embedded component
+
+### Entropy Analysis
+```bash
+python hex_analyzer.py file.xlsx --entropy
+```
+- Calculates entropy for data blocks to identify:
+  - Encrypted sections (high entropy)
+  - Compressed data
+  - Random or obfuscated content
+- Helps locate hidden or protected areas
+
+### Hex Pattern Matching
+```bash
+python hex_analyzer.py file.xlsx --strings
+```
+- Converts text to hex patterns for precise matching
+- Searches for credential keywords in hex format:
+  - `username` → `757365726e616d65`
+  - `password` → `70617373776f7264`
+  - `admin` → `61646d696e`
+- Provides context around found patterns
+
+### Base64 Detection & Decoding
+```bash
+python hex_analyzer.py file.xlsx --base64
+```
+- Identifies base64 encoded strings
+- Automatically decodes suspicious patterns
+- Filters for credential-related decoded content
+- Handles various encoding formats and padding
+
+### Unicode String Analysis
+```bash
+python hex_analyzer.py file.xlsx --unicode
+```
+- Detects UTF-16 encoded strings
+- Searches for credential keywords in Unicode format
+- Handles null-byte separated Unicode text
+- Extracts hidden Unicode metadata
+
+### Formatted Hex Dumps
+```bash
+python hex_analyzer.py file.xlsx --hex-dump
+```
+- Creates formatted hex dumps with ASCII representation
+- 16 bytes per line with offset addresses
+- Side-by-side hex and ASCII view
+- Saves to `.hex` files for manual analysis
+
+### Advanced Analysis Example
+```bash
+# Complete forensics analysis
+python hex_analyzer.py suspicious.xlsx --all
+
+# Output:
+# [*] Creating hex dump: suspicious.xlsx.hex
+# [+] Found ZIP/Office signature at offset: 0x00000000 (0)
+# [+] Found XML signature at offset: 0x00000156 (342)
+# [+] Extracted ZIP/Office file: suspicious.xlsx_embedded_0.zip (15234 bytes)
+# [+] Found 'password' pattern at positions: [1250, 2847]
+# [+] Suspicious base64: YWRtaW46cGFzc3dvcmQxMjM=
+#     Decoded: admin:password123
+# [!] High entropy block at offset 0x00003000: 7.89
+# [+] Credential-like Unicode string: database_password
+```
 
 ## Example Output
 
@@ -144,6 +240,9 @@ hexdump -C corrupted_file.xlsx > file.hex
 
 # Or use xxd for a cleaner output
 xxd corrupted_file.xlsx > file.hex
+
+# Or use the built-in hex analyzer
+python hex_analyzer.py corrupted_file.xlsx --hex-dump
 ```
 
 ### Binary Analysis with Custom Patterns
@@ -156,6 +255,19 @@ The tool automatically handles:
 - UTF-16 Little Endian (common in Office files)
 - Raw binary data
 
+### Combining Tools for Maximum Coverage
+```bash
+# Step 1: Basic forensics analysis
+python excel_forensics.py file.xlsx -o basic_results.txt
+
+# Step 2: Advanced hex analysis
+python hex_analyzer.py file.xlsx --all
+
+# Step 3: Manual review of hex dump
+python hex_analyzer.py file.xlsx --hex-dump
+# Then review the .hex file manually
+```
+
 ## Common Credential Locations in Excel Files
 
 1. **XML Metadata**: Connection strings in `xl/connections.xml`
@@ -164,6 +276,8 @@ The tool automatically handles:
 4. **Embedded Objects**: Credentials in embedded files
 5. **Cell Comments**: Hidden text in cell comment metadata
 6. **External Links**: Database connection strings in external links
+7. **Binary Streams**: Credentials in OLE compound document streams
+8. **Encrypted Sections**: Password-protected areas with weak encryption
 
 ## Tips for Success
 
@@ -172,6 +286,9 @@ The tool automatically handles:
 3. **Examine Temporary Files**: Check for `.tmp` files created during repair
 4. **Use Multiple Tools**: Combine with other forensics tools like `binwalk`, `strings`, or `oletools`
 5. **Manual Review**: Always manually review extracted strings for false positives
+6. **Entropy Analysis**: Use entropy to identify encrypted or compressed sections
+7. **Base64 Decoding**: Check all base64 strings for hidden credentials
+8. **Unicode Analysis**: Don't forget UTF-16 encoded strings
 
 ## Security Notes
 
@@ -187,6 +304,7 @@ If the tool doesn't recognize the file format:
 - Try renaming the file with different extensions (.xlsx, .xls, .zip)
 - Use `file` command to check the actual file type
 - Examine the file header with a hex editor
+- Use the signature detection feature to identify embedded formats
 
 ### No Credentials Found
 If no credentials are extracted:
@@ -194,12 +312,22 @@ If no credentials are extracted:
 - Credentials might be stored in non-standard locations
 - Try manual hex analysis or other forensics tools
 - Check for steganography or hidden data techniques
+- Use entropy analysis to find encrypted sections
+- Look for base64 or other encoded strings
 
 ### Large Files
 For very large files:
 - The tool might take considerable time to analyze
 - Consider splitting the analysis into smaller chunks
 - Use the verbose mode to monitor progress
+- Run specific analysis methods instead of --all
+
+### High Entropy Sections
+If entropy analysis shows encrypted sections:
+- These might contain protected credentials
+- Try common passwords or dictionary attacks
+- Look for encryption keys elsewhere in the file
+- Check for weak encryption implementations
 
 ## Contributing
 
