@@ -18,7 +18,7 @@ A comprehensive Python tool for extracting credentials and sensitive data from c
 
 1. Install required dependencies:
 ```bash
-pip install -r requirements_excel_forensics.txt
+pip install -r requirements.txt
 ```
 
 2. Make the script executable:
